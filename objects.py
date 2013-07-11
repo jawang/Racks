@@ -7,6 +7,9 @@ class Routers:
             self.groups.append(Group(i))
 
     def find(self, inputval, outputval):
+        if inputval not in range(1,641) or outputval not in range(1,641):
+            return 'Error'
+        
         gindex = (outputval-1)/128
         group = self.groups[gindex]
         box = group.boxes[((inputval-1)/64)/4][((inputval-1)/64)%4]
@@ -19,7 +22,7 @@ class Routers:
             position = box.MIDB
         elif bindex in range(97,129):
             position = box.BOT
-        return [box.rackname, box.row+1 , position]
+        return ["MER1-"+box.rackname, box.row+1 , position]
         
 
 class Group:

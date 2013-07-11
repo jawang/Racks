@@ -30,16 +30,32 @@ class Application(tk.Frame):
         self.gobutton.grid(row=0,column=2,rowspan=2)
 
         # Output
-        self.out = tk.Label(self)
-        self.out.grid(row=0,column=3,rowspan=2)
+        self.outlab = [tk.Label(self,width=8) for i in range(3)]
+        self.outlab[0].configure(text='Rack')
+        self.outlab[1].configure(text='Row')
+        self.outlab[2].configure(text='Position')
+        self.out = [tk.Label(self) for i in range(3)]
+        for i in range(3):
+            #self.outlab[i].grid_propagate(0)
+            self.outlab[i].grid(row=0,column=3+i)
+            self.out[i].grid(row=1,column=3+i)
 
-    def go(self):
-        output = self.r.find(self.inputnum.get(),self.outputnum.get())
-        self.out.configure(text='MER-'+output[0]+' Row '+str(output[1])+
-                           ' Position '+str(output[2]))
+        self.err = tk.Label(self)
+        self.err.grid(row=2,column=3,columnspan=3)
+
+    def go(self,event=None):
+        if self.inputnum.get() not in range(1,641) or \
+           self.outputnum.get() not in range(1,641):
+            self.err.configure(text='Error: No such combination')
+        else:
+            self.err.configure(text='')
+            output = self.r.find(self.inputnum.get(),self.outputnum.get())
+            for i in range(3):
+                self.out[i].configure(text=str(output[i]))
 
 root = tk.Tk()
 app = Application()                       
 app.master.title('Racks on Racks')
-root.geometry('300x50')
+app.bind_all('<Return>',app.go)
+root.geometry('300x75')
 app.mainloop()  

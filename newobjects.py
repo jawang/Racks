@@ -9,6 +9,18 @@ racks = [['L28','L27','L26','L25'],
          ['N27','N26','N25'],
          ['N24','N23','N22']]
 
+count = {0:'zeroeth',
+         1:'first',
+         2:'second',
+         3:'third',
+         4:'fourth',
+         5:'fifth',
+         6:'sixth',
+         7:'seventh',
+         8:'eighth',
+         9:'ninth',
+         10:'tenth'}
+
 # type constants
 OLD = 0
 NEW = 1
@@ -67,30 +79,30 @@ class Routers:
 
                 # get card number and chassis
                 if (outputnum-1)%128 in range(0,32):
-                    cindex = rindex*3+1
+                    cindex = rindex*3+2
                     chassis = box.chassis[1]
                     card = 1
                 elif (outputnum-1)%128 in range(32,64):
-                    cindex = rindex*3
+                    cindex = rindex*3+1
                     chassis = box.chassis[0]
                     card = 7
                 elif (outputnum-1)%128 in range(64,96):
-                    cindex = rindex*3+1
+                    cindex = rindex*3+2
                     chassis = box.chassis[1]
                     card = 6
                 elif (outputnum-1)%128 in range(96,128):
-                    cindex = rindex*3+1
+                    cindex = rindex*3+2
                     chassis = box.chassis[1]
                     card = 7
 
-                print [box.rackname, cindex+1, card]
+                #print [box.rackname, cindex+1, card]
                 
             # new boxes
             elif inputnum in range(641,1025):
                 bindex = (inputnum-640-1)/128+10
                 box = group.boxes[bindex]
-                #cindex =
-                #chassis =
+                cindex = 13 - bindex
+                chassis = box.chassis[0]
                 #card = 
         # new groups
         elif outputnum in range(641,1025):
@@ -98,6 +110,13 @@ class Routers:
             group = self.groups[gindex]
             bindex = (inputnum-1)/128
             box = group.boxes[bindex]
+            if bindex in range(0,5):
+                cindex = 5 - bindex
+            elif bindex in range(5,7):
+                cindex = 7 - bindex
+            elif bindex == 7:
+                cindex = 1
+            chassis = box.chassis[0]
             #cindex =
             #chassis =
             #card = 
@@ -105,8 +124,9 @@ class Routers:
             print 'Invalid output '+str(outputnum)
             return
 
-        return [box.rackname, cindex+1, card]
-    
+        return [box.rackname, cindex, card, box, chassis]
+
+# A Group represents a cluster of routers that share the same output range    
 class Group:
     def __init__(self,gtype):
         if gtype==OLD:
@@ -119,13 +139,13 @@ class Group:
         else:
             print 'Invalid gtype '+str(gtype)
    
-
+# A Box represents a subset of a Group that shares an input range
 class Box:
     def __init__(self,gtype,btype):
         self.rackname = ''
         if gtype==OLD:
             if btype==OLD:
-                self.type = 'TRS BOX'
+                self.type = 'XD BOX'
                 self.chassis = [Chassis(OLD,OLD) \
                                 for i in range(3)]
             elif btype==NEW:
@@ -142,6 +162,7 @@ class Box:
         else:
             print 'Invalid gtype '+str(gtype)
 
+# A Chassis represents an individual router box
 class Chassis:
     def __init__(self,gtype,btype):
         if gtype==OLD:
@@ -202,25 +223,50 @@ class Application(tk.Frame):
         self.err = tk.Label(self)
         self.err.grid(row=2,column=3,columnspan=3)
 
-        self.instructions = tk.Text(self,width=30,height=10)
+        self.instructions = tk.Text(self,width=30,height=10,wrap=tk.WORD)
         self.instructions.grid(row=3,column=0,columnspan=6)
+
+        # Canvas
+        self.draw = tk.Canvas(self,relief='sunken',bd=1,width='8c',height='6c',
+                              bg='white')
+        self.draw.grid(row=0,column=6,rowspan=4)
         
 
     def go(self,event=None):
+        # Clear Text box
         self.instructions.delete(1.0,tk.END)
+        # Make sure inputs are valid
         if self.inputnum.get() not in range(1,1025) or \
            self.outputnum.get() not in range(1,1025):
             #self.err.configure(text='Error: No such combination')
             self.instructions.insert(tk.INSERT,'Error: No such combination')
+            for i in range(3):
+                self.out[i].configure(text='N/A')
         else:
             #self.err.configure(text='')
             output = self.r.find(self.inputnum.get(),self.outputnum.get())
             for i in range(3):
                 self.out[i].configure(text=str(output[i]))
 
+            self.instructions.insert(tk.INSERT,
+                    'Go to rack MER1-'+output[0]+'.\n\nOpen the '+
+                    str(count[output[1]])+' chassis from the top.\n\n'+
+                    'Within the chassis, find the '+str(count[output[2]])+
+                    ' card from the top.')
+
+            # If old XD router
+            if output[2] in range(1,8):
+                chassis = self.draw.create_rectangle(50,50,250,210)
+
+                cards = [self.draw.create_line(
+                        50,50+20*(i+1),250,50+20*(i+1)) for i in range(7)]
+                #print cards
+                self.draw.itemconfig(cards[output[2]-1],fill='red')
+                    
+
 root = tk.Tk()
 app = Application()                       
 app.master.title('Racks on Racks')
 app.bind_all('<Return>',app.go)
-root.geometry('300x250')
+root.geometry('290x250')
 app.mainloop()  

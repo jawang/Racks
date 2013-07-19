@@ -61,7 +61,7 @@ class Routers:
         card = 0
         # find the group by output
         # old groups
-        if outputnum in range(1,641):
+        if outputnum in range(1,513):
             gindex = (outputnum-1)/128
             group = self.groups[gindex]
             
@@ -99,14 +99,23 @@ class Routers:
                 
             # new boxes
             elif inputnum in range(641,1025):
-                bindex = (inputnum-640-1)/128+10
+                bindex = (inputnum-641)/128+10
                 box = group.boxes[bindex]
-                cindex = 13 - bindex
+                cindex = 13 - bindex 
                 chassis = box.chassis[0]
-                #card = 
+                if (outputnum-1)%128 in range(0,64):
+                    if (inputnum-1)%128 in range(0,64):
+                        card = 4
+                    elif (inputnum-1)%128 in range(64,128):
+                        card = 3
+                elif (outputnum-1)%128 in range(64,128):
+                    if (inputnum-1)%128 in range(0,64):
+                        card = 2
+                    elif (inputnum-1)%128 in range(64,128):
+                        card = 1
         # new groups
-        elif outputnum in range(641,1025):
-            gindex = (outputnum-513-1)/256+5
+        elif outputnum in range(513,1025):
+            gindex = (outputnum-513)/256+5
             group = self.groups[gindex]
             bindex = (inputnum-1)/128
             box = group.boxes[bindex]
@@ -117,9 +126,25 @@ class Routers:
             elif bindex == 7:
                 cindex = 1
             chassis = box.chassis[0]
-            #cindex =
-            #chassis =
-            #card = 
+
+            if (inputnum-1)%128 in range(0,64):
+                if (outputnum-1)%256 in range(0,64):
+                    card = 8
+                elif (outputnum-1)%256 in range(64,128):
+                    card = 7
+                elif (outputnum-1)%256 in range(128,192):
+                    card = 6
+                elif (outputnum-1)%256 in range(192,256):
+                    card = 5
+            elif (inputnum-1)%128 in range(64,128):
+                if (outputnum-1)%256 in range(0,64):
+                    card = 4
+                elif (outputnum-1)%256 in range(64,128):
+                    card = 3
+                elif (outputnum-1)%256 in range(128,192):
+                    card = 2
+                elif (outputnum-1)%256 in range(192,256):
+                    card = 1
         else:
             print 'Invalid output '+str(outputnum)
             return
@@ -236,6 +261,14 @@ class Application(tk.Frame):
         # Clear Text box
         self.instructions.delete(1.0,tk.END)
         # Make sure inputs are valid
+        try:
+            self.inputnum.get()
+            self.outputnum.get()
+        except Exception:
+            self.instructions.insert(tk.INSERT,'Error: Invalid input')
+            for i in range(3):
+                self.out[i].configure(text='N/A')
+            return
         if self.inputnum.get() not in range(1,1025) or \
            self.outputnum.get() not in range(1,1025):
             #self.err.configure(text='Error: No such combination')
